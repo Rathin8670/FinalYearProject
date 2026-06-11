@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Video Call - CarePulse</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Syne:wght@600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --background: #050505;
+      --surface: #121212;
+      --primary: #3b4bf8;
+      --primary-hover: #2d3ad1;
+      --danger: #ef4444;
+      --danger-hover: #dc2626;
+      --text-main: #ffffff;
+      --text-muted: #a1a1aa;
+      --glass-border: rgba(255, 255, 255, 0.08);
+      --glass-bg: rgba(20, 20, 20, 0.6);
+      --font-sans: 'Inter', sans-serif;
+      --font-display: 'Syne', sans-serif;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: var(--font-sans);
+      background-color: var(--background);
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(59, 75, 248, 0.15) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(204, 255, 0, 0.05) 0px, transparent 50%);
+      color: var(--text-main);
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    #app {
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      z-index: 1;
+    }
+    
+    /* Header */
+    .header {
+      padding: 1.5rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: linear-gradient(to bottom, rgba(5,5,5,0.8), transparent);
+      z-index: 10;
+    }
+
+    .header h2 {
+      font-family: var(--font-display);
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    #sessionInfo {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      margin-top: 0.25rem;
+      font-weight: 500;
+      background: var(--glass-bg);
+      padding: 0.25rem 0.75rem;
+      border-radius: 999px;
+      border: 1px solid var(--glass-border);
+      display: inline-block;
+      backdrop-filter: blur(8px);
+    }
+
+    #connectionStatus {
+      font-size: 0.875rem;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    #connectionStatus::before {
+      content: '';
+      display: block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: var(--primary);
+      box-shadow: 0 0 10px var(--primary);
+    }
+    
+    /* Video Layout - Picture in Picture */
+    .video-container {
+      flex: 1;
+      position: relative;
+      width: 100%;
+      height: 100%;
+      padding: 0;
+      background: #000;
+      overflow: hidden;
+    }
+    
+    /* Base participant style */
+    .video-participant {
+      position: absolute;
+      border-radius: 16px;
+      overflow: hidden;
+      background: var(--surface);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+      border: 1px solid var(--glass-border);
+      transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .video-participant video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    /* Remote video (Main View) */
+    .video-participant.remote {
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border-radius: 0;
+      border: none;
+      z-index: 1;
+    }
+
+    /* Local video (Picture in Picture) */
+    .video-participant.local {
+      width: 280px;
+      height: 160px; /* 16:9 aspect ratio */
+      bottom: 2rem;
+      right: 2rem;
+      z-index: 20;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+      border: 2px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    /* Hover effect for local video */
+    .video-participant.local:hover {
+      transform: scale(1.05);
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    /* Info overlay adjustments */
+    .participant-info {
+      position: absolute;
+      bottom: 1rem;
+      left: 1rem;
+      padding: 0.5rem 1rem;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(12px);
+      border-radius: 50px;
+      border: 1px solid rgba(255,255,255,0.1);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      max-width: 80%;
+    }
+
+    .video-participant.remote .participant-info {
+       bottom: 2rem;
+       left: 2rem;
+       padding: 0.75rem 1.5rem;
+    }
+
+    .video-participant.local .participant-info {
+        padding: 0.25rem 0.75rem;
+        bottom: 0.5rem;
+        left: 0.5rem;
+    }
+
+    .video-participant.local .participant-name {
+        font-size: 0.75rem;
+    }
+    
+    .video-participant.local .participant-role {
+        display: none; /* Hide role on small local video */
+    }
+
+    /* AI avatar (no webcam) */
+    .video-participant.ai-avatar-placeholder {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, rgba(59, 75, 248, 0.2), rgba(59, 75, 248, 0.05));
+      border: 1px solid rgba(59, 75, 248, 0.3);
+    }
+    .video-participant.ai-avatar-placeholder .ai-avatar {
+      width: 40%;
+      max-width: 200px;
+      color: rgba(255, 255, 255, 0.9);
+    }
+    .video-participant.ai-avatar-placeholder .ai-avatar svg {
+      width: 100%;
+      height: auto;
+    }
+    .video-participant.ai-avatar-placeholder.remote {
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border-radius: 0;
+      border: none;
+    }
+    
+    .participant-name {
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+    
+    .participant-role {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-top: 2px;
+    }
+    
+    /* Controls Bar */
+    .controls {
+      padding: 2rem;
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      background: linear-gradient(to top, rgba(5,5,5,1), transparent);
+    }
+    
+    .btn {
+      height: 3.5rem;
+      padding: 0 1.5rem;
+      border: none;
+      border-radius: 14px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      font-family: var(--font-sans);
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      backdrop-filter: blur(10px);
+    }
+
+    .btn:active {
+      transform: scale(0.96);
+    }
+    
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.15);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+    
+    .btn-danger {
+      background: rgba(239, 68, 68, 0.2);
+      color: #fca5a5;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+    
+    .btn-danger:hover {
+      background: var(--danger);
+      color: white;
+      border-color: var(--danger);
+      box-shadow: 0 0 20px rgba(239, 68, 68, 0.4);
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-hover);
+    }
+    
+    /* Status & Error */
+    .status {
+      text-align: center;
+      padding: 2rem;
+      color: var(--text-muted);
+      font-size: 1.1rem;
+      font-weight: 500;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 0.6; }
+      50% { opacity: 1; }
+      100% { opacity: 0.6; }
+    }
+    
+    .error-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      padding: 2rem;
+    }
+    
+    .error-content {
+      max-width: 500px;
+      text-align: center;
+      background: var(--surface);
+      padding: 2.5rem;
+      border-radius: 24px;
+      border: 1px solid var(--glass-border);
+      box-shadow: 0 20px 50px -20px rgba(0,0,0,0.5);
+    }
+    
+    .error-content h3 {
+      font-family: var(--font-display);
+      margin-bottom: 1rem;
+      color: var(--danger);
+      font-size: 1.25rem;
+    }
+    
+    .error-content ol {
+      text-align: left;
+      margin: 1.5rem 0;
+      padding-left: 1.5rem;
+      color: var(--text-muted);
+    }
+    
+    .error-content li {
+      margin-bottom: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div class="header">
+      <div>
+        <h2>CarePulse Video</h2>
+        <div id="sessionInfo">Waiting for connection...</div>
+      </div>
+      <div id="connectionStatus">Connecting</div>
+    </div>
+    
+    <div id="videoContainer" class="video-container">
+      <div class="status" id="statusMessage">Initializing secure connection...</div>
+    </div>
+    
+    <div class="controls" id="controls">
+      <button class="btn btn-secondary" id="toggleMic">
+        <span>🎤</span> Mute
+      </button>
+      <button class="btn btn-secondary" id="toggleCamera">
+        <span>📹</span> Camera Off
+      </button>
+      <button class="btn btn-danger" id="leaveCall">
+        <span>📞</span> Leave Call
+      </button>
+    </div>
+  </div>
+  
+  <script src="/socket.io/socket.io.js"></script>
+  <script type="module" src="/js/video.js"></script>
+</body>
+</html>
+

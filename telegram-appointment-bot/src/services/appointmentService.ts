@@ -1,0 +1,176 @@
+import { env } from "../config/env";
+import { log } from "../utils/logger";
+
+export interface AppointmentRequest {
+  patientId: number;     // Telegram user mapped to your internal userId
+  doctorId: string;      // resolved by lookup
+  date: string;          // YYYY-MM-DD
+  time: string;          // HH:MM
+}
+
+export interface AppointmentSuccess {
+  ok: true;
+  appointmentId: string;
+  doctorName: string;
+  date: string;
+  time: string;
+}
+
+export interface AppointmentFailure {
+  ok: false;
+  reason: "SLOT_UNAVAILABLE" | "VALIDATION_ERROR" | "OTHER_ERROR";
+  availableSlots?: string[];
+  message?: string;
+}
+
+export type AppointmentResult = AppointmentSuccess | AppointmentFailure;
+
+import { findClosestDoctor } from "./intentService";
+
+export type DoctorMatchResult = 
+  | { type: "EXACT"; doctor: { id: string; name: string } }
+  | { type: "SUGGESTION"; doctor: { id: string; name: string } }
+  | { type: "NONE" };
+
+export async function findDoctorByQuery(query: string): Promise<DoctorMatchResult> {
+  try {
+    const url = env.APPOINTMENT_SERVICE_BASE_URL + "/api/doctors";
+    // log.info(`Fetching doctors from ${url}...`);
+
+    const response = await fetch(url);
+    if (!response.ok) return { type: "NONE" };
+
+    const json = await response.json();
+    if (!json.success || !Array.isArray(json.data)) return { type: "NONE" };
+
+    const doctors = json.data;
+    const normalizedQuery = query.toLowerCase().trim();
+
+    // 1. Exact Name Match
+    let match = doctors.find((d: any) => d.user?.name?.toLowerCase() === normalizedQuery);
+    if (match) {
+        return { 
+            type: "EXACT", 
+            doctor: { id: match._id, name: match.user.name } 
+        };
+    }
+
+    // 2. Strong Partial Match (substring)
+    match = doctors.find((d: any) => d.user?.name?.toLowerCase().includes(normalizedQuery));
+    if (match) {
+        // If query is very short (e.g. "Jo"), partial match might be risky, but let's assume it's okay for now OR treat as suggestion?
+        // Let's treat valid substring as EXACT for simplicity, unless we want to confirm everything.
+        // User asked: "if user types yes, then do the booking". Implies confirmation.
+        // Let's return substring as EXACT if it's high confidence, or SUGGESTION if ambiguous?
+        // For now, sticking to previous behavior: Substring = Match. 
+        // We only use AI if strict substring fails.
+        return { 
+            type: "EXACT", 
+            doctor: { id: match._id, name: match.user.name } 
+        };
+    }
+
+    // 3. AI Fuzzy Match
+    const doctorNames = doctors
+        .map((d: any) => d.user?.name)
+        .filter((n: any) => typeof n === "string");
+    
+    const closestName = await findClosestDoctor(query, doctorNames);
+    
+    if (closestName) {
+        const aiMatch = doctors.find((d: any) => d.user?.name === closestName);
+        if (aiMatch) {
+            return {
+                type: "SUGGESTION",
+                doctor: { id: aiMatch._id, name: aiMatch.user.name }
+            };
+        }
+    }
+
+    return { type: "NONE" };
+
+  } catch (error) {
+    log.error("Error resolving doctor:", error);
+    return { type: "NONE" };
+  }
+}
+
+// Deprecated: kept for backward compat if needed, but we should use findDoctorByQuery
+export async function resolveDoctorId(name: string): Promise<string | null> {
+    const res = await findDoctorByQuery(name);
+    if (res.type === "EXACT") return res.doctor.id;
+    return null; 
+}
+
+export async function bookAppointment(req: AppointmentRequest): Promise<AppointmentResult> {
+  try {
+    const url =
+      env.APPOINTMENT_SERVICE_BASE_URL + env.APPOINTMENT_BOOKING_ENDPOINT;
+
+    log.info(`Booking appointment at ${url} for doc ${req.doctorId} on ${req.date} at ${req.time}`);
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { 
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${env.BACKEND_AUTH_TOKEN}`
+      },
+      // Backend expects: doctorId, appointmentDate, appointmentTime, reason
+      body: JSON.stringify({
+        doctorId: req.doctorId,
+        appointmentDate: req.date,
+        appointmentTime: req.time,
+        reason: "Booking via Telegram Bot",
+        comments: `Telegram User ID: ${req.patientId}`
+      })
+    });
+
+    const json = await response.json();
+    log.info("Booking API response:", json);
+
+    if (!response.ok) {
+        // Handle 400 Bad Request (likely slot unavailable or validation)
+        if (response.status === 400 && json.message?.includes("Doctor is not available")) {
+             return {
+                ok: false,
+                reason: "SLOT_UNAVAILABLE",
+                // If backend provided suggested slots, parse them here. 
+                // Currently backend just says "Doctor is not available".
+                // You might want to update backend to return available slots.
+                availableSlots: ["09:00", "10:00", "11:00", "14:00", "15:00"] // Fallback suggestions
+            };
+        }
+
+        return {
+            ok: false,
+            reason: "VALIDATION_ERROR",
+            message: json.message || "Unknown validation error"
+        };
+    }
+
+    // Success (201 Created)
+    const appointment = json.data;
+    const doctorObj = appointment.doctor; // might be populated
+    
+    // Safety check on doctor name
+    const doctorName = (typeof doctorObj === 'object' && doctorObj?.user?.firstName) 
+        ? `Dr. ${doctorObj.user.firstName} ${doctorObj.user.lastName}`
+        : "the doctor";
+
+    return {
+      ok: true,
+      appointmentId: appointment._id,
+      doctorName: doctorName,
+      date: appointment.appointmentDate.split('T')[0],
+      time: appointment.appointmentTime
+    };
+
+  } catch (err) {
+    log.error("Booking API error:", err);
+    return {
+      ok: false,
+      reason: "OTHER_ERROR",
+      message: "Failed to reach booking service"
+    };
+  }
+}

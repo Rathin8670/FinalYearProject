@@ -1,0 +1,8 @@
+contexts/AuthContext.tsx(37,17): error TS2345: Argument of type '{ id: number; email: string; name: string; createdAt: string; }' is not assignable to parameter of type 'SetStateAction<User | null>'.
+  Type '{ id: number; email: string; name: string; createdAt: string; }' is not assignable to type 'User'.
+    Types of property 'id' are incompatible.
+      Type 'number' is not assignable to type 'string'.
+contexts/AuthContext.tsx(53,17): error TS2345: Argument of type '{ id: number; email: string; name: string; createdAt: string; }' is not assignable to parameter of type 'SetStateAction<User | null>'.
+  Type '{ id: number; email: string; name: string; createdAt: string; }' is not assignable to type 'User'.
+    Types of property 'id' are incompatible.
+      Type 'number' is not assignable to type 'string'.

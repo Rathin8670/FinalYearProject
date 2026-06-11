@@ -1,0 +1,147 @@
+@import "tailwindcss";
+@source "../../../packages/ai-chat-widget";
+@import "tw-animate-css";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+
+  /* Modal & Component Variables */
+  --context-card-border: hsla(0, 0%, 92%, 1);
+  --ds-gray-1000: hsla(0, 0%, 9%, 1);
+  --ds-gray-alpha-400: hsla(0, 0%, 0%, 0.08);
+  --ds-background-200: hsla(0, 0%, 98%, 1);
+  --ds-background-200-alpha-800: hsla(0, 0%, 98%, 0.8);
+  --accents-1: #fafafa;
+  --accents-2: #eaeaea;
+  --ds-background-100: hsla(0, 0%, 100%, 1);
+  --ds-overlay: rgba(0, 0, 0, .4);
+  --ds-shadow-border: 0 0 0 1px rgba(0, 0, 0, 0.08);
+  --ds-shadow-small: 0px 2px 2px rgba(0, 0, 0, 0.04);
+  --ds-shadow-border-small: var(--ds-shadow-border), var(--ds-shadow-small);
+  --ds-shadow-medium: 0px 2px 2px rgba(0, 0, 0, 0.04), 0px 8px 8px -8px rgba(0, 0, 0, 0.04);
+  --ds-shadow-border-medium: var(--ds-shadow-border), var(--ds-shadow-medium);
+  --ds-shadow-large: 0px 2px 2px rgba(0, 0, 0, 0.04), 0px 8px 16px -4px rgba(0, 0, 0, 0.04);
+  --ds-shadow-border-large: var(--ds-shadow-border), var(--ds-shadow-large);
+  --ds-shadow-tooltip: var(--ds-shadow-border), 0px 1px 1px rgba(0, 0, 0, 0.02), 0px 4px 8px rgba(0, 0, 0, 0.04);
+  --ds-shadow-menu: var(--ds-shadow-border), 0px 1px 1px rgba(0, 0, 0, 0.02), 0px 4px 8px -4px rgba(0, 0, 0, 0.04), 0px 16px 24px -8px rgba(0, 0, 0, 0.06);
+  --ds-shadow-modal: var(--ds-shadow-border), 0px 1px 1px rgba(0, 0, 0, 0.02), 0px 8px 16px -4px rgba(0, 0, 0, 0.04), 0px 24px 32px -8px rgba(0, 0, 0, 0.06);
+  --ds-shadow-fullscreen: var(--ds-shadow-border), 0px 1px 1px rgba(0, 0, 0, 0.02), 0px 8px 16px -4px rgba(0, 0, 0, 0.04), 0px 24px 32px -8px rgba(0, 0, 0, 0.06);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-inter); /* Changed to Inter to match landing */
+  --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-syne);
+
+  --color-primary: #3b4bf8;
+  --color-primary-foreground: #ffffff;
+
+  --color-accent: #ccff00;
+  --color-accent-foreground: #000000;
+
+  --color-muted: #f3f4f6;
+  --color-muted-foreground: #6b7280;
+
+  /* Premium Modal Theme */
+  --color-context-card-border: var(--context-card-border);
+  --color-gray-1000: var(--ds-gray-1000);
+  --color-gray-alpha-400: var(--ds-gray-alpha-400);
+  --color-background-100: var(--ds-background-100);
+  --color-background-200: var(--ds-background-200);
+  --color-background-200-alpha-800: var(--ds-background-200-alpha-800);
+  --color-accents-1: var(--accents-1);
+  --color-accents-2: var(--accents-2);
+  --color-overlay: var(--ds-overlay);
+  --shadow-border: var(--ds-shadow-border);
+  --shadow-border-small: var(--ds-shadow-border-small);
+  --shadow-border-medium: var(--ds-shadow-border-medium);
+  --shadow-border-large: var(--ds-shadow-border-large);
+  --shadow-tooltip: var(--ds-shadow-tooltip);
+  --shadow-menu: var(--ds-shadow-menu);
+  --shadow-modal: var(--ds-shadow-modal);
+  --shadow-fullscreen: var(--ds-shadow-fullscreen);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+.dark {
+  --context-card-border: hsla(0, 0%, 18%, 1);
+  --ds-gray-1000: hsla(0, 0%, 93%, 1);
+  --ds-gray-alpha-400: hsla(0, 0%, 100%, 0.14);
+  --ds-background-200: hsla(0, 0%, 0%, 1);
+  --ds-background-200-alpha-800: hsla(0, 0%, 0%, 0.8);
+  --accents-2: #333333;
+  --accents-1: #111111;
+  --ds-background-100: hsla(0, 0%, 4%, 1);
+  --ds-shadow-border: 0 0 0 1px rgba(255, 255, 255, 0.145);
+  --ds-shadow-small: 0px 1px 2px rgba(0, 0, 0, 0.16);
+  --ds-shadow-border-small: var(--ds-shadow-border), 0px 1px 2px rgba(0, 0, 0, 0.16);
+  --ds-shadow-medium: 0px 2px 2px rgba(0, 0, 0, 0.32), 0px 8px 8px -8px rgba(0, 0, 0, 0.16);
+  --ds-shadow-border-medium: var(--ds-shadow-border), 0px 2px 2px rgba(0, 0, 0, 0.32), 0px 8px 8px -8px rgba(0, 0, 0, 0.16);
+  --ds-shadow-large: 0px 2px 2px rgba(0, 0, 0, 0.04), 0px 8px 16px -4px rgba(0, 0, 0, 0.04);
+  --ds-shadow-border-large: var(--ds-shadow-border), 0px 2px 2px rgba(0, 0, 0, 0.04), 0px 8px 16px -4px rgba(0, 0, 0, 0.04);
+  --ds-shadow-tooltip: var(--ds-shadow-border), 0px 1px 1px rgba(0, 0, 0, 0.02), 0px 4px 8px rgba(0, 0, 0, 0.04);
+  --ds-shadow-menu: var(--ds-shadow-border), 0px 1px 1px rgba(0, 0, 0, 0.02), 0px 4px 8px -4px rgba(0, 0, 0, 0.04), 0px 16px 24px -8px rgba(0, 0, 0, 0.06);
+  --ds-shadow-modal: var(--ds-shadow-border), 0px 1px 1px rgba(0, 0, 0, 0.02), 0px 8px 16px -4px rgba(0, 0, 0, 0.04), 0px 24px 32px -8px rgba(0, 0, 0, 0.06);
+  --ds-shadow-fullscreen: var(--ds-shadow-border), 0px 1px 1px rgba(0, 0, 0, 0.02), 0px 8px 16px -4px rgba(0, 0, 0, 0.04), 0px 24px 32px -8px rgba(0, 0, 0, 0.06);
+}
+
+
+@layer utilities {
+  @keyframes fade-spin {
+    0% { opacity: 1; }
+    100% { opacity: 0.15; }
+  }
+  .animate-fade-spin {
+    animation: fade-spin 1.2s linear infinite;
+  }
+}
+
+/* Custom Utilities from Landing */
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  .clip-text-image {
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+  }
+}
+
+/* Lenis Smooth Scroll */
+html.lenis, html.lenis body {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+.lenis.lenis-scrolling iframe {
+  pointer-events: none;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  overflow-x: hidden;
+}
