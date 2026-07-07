@@ -1,5 +1,5 @@
 import Doctor from '../models/Doctor.js';
-import User from '../models/User.js';
+import User from '../models/user.js';
 
 // Get all doctors
 export const getAllDoctors = async (req, res) => {

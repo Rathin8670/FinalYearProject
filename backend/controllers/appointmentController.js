@@ -1,7 +1,7 @@
 import axios from 'axios';
 import Appointment from '../models/Appointment.js';
 import Doctor from '../models/Doctor.js';
-import User from '../models/User.js';
+import User from '../models/user.js';
 
 const VIDEO_SERVICE_URL = process.env.VIDEO_SERVICE_URL || 'http://localhost:4000';
 const VIDEO_SERVICE_SECRET = process.env.VIDEO_SERVICE_SECRET || 'my-secret-key-123';
