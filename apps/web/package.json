@@ -9,7 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@carepulse/ai-chat-widget": "*",
+    "@carepulse/ai-chat-widget": "workspace:*",
     "@napi-rs/canvas": "^0.1.80",
     "@radix-ui/react-label": "^2.1.8",
     "@radix-ui/react-slot": "^1.2.4",
