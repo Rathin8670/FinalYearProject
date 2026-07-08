@@ -14,7 +14,7 @@ services:
     build: ./ai-doctor-service
     container_name: carepulse-ai
     ports:
-      - "8000:8000"
+      - "4500:4500"
     env_file:
       - ./ai-doctor-service/.env
 
